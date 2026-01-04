@@ -1,5 +1,4 @@
 -- Q1
-DROP TYPE IF EXISTS ticket_type_enum CASCADE;
 CREATE TYPE ticket_type_enum AS ENUM ('issue', 'pull_request');
 
 ALTER TABLE ticket ALTER COLUMN type TYPE ticket_type_enum USING type::ticket_type_enum;

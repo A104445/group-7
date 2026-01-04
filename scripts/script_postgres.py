@@ -85,6 +85,27 @@ def create_q2_table(query_str):
     print(myTable)
     return myTable
 
+def change_q3_params(query_str: str, start_date: str, end_date: str, interval: str) -> str:
+    q = query_str.replace("'2022-01-01'", f"'{start_date}'")
+    q = q.replace("'2025-01-01'", f"'{end_date}'")
+    q = q.replace("'15 minutes'", f"'{interval}'")
+    return q
+
+def run_q3(query_str):
+    myTable = PrettyTable(["intervalo", "bin", "tempo médio (s)"])
+    scenarios = [
+        ("2022-01-01", "2025-01-01", "15 minutes"),
+        ("2022-01-01", "2025-01-01", "60 minutes"),
+        ("2020-01-01", "2020-06-01", "15 minutes")
+    ]
+    for start, end, bin_size in scenarios:
+        print(f"\n--- a testar Q3: {start} a {end} (bin: {bin_size}) ---")
+        q = change_q3_params(query_str, start, end, bin_size)
+        avg_final = measure_query(q)
+        myTable.add_row([f"{start} a {end}", bin_size, avg_final])
+    print("\nRESULTADOS (Q3):")
+    print(myTable)
+
 def q4_change_arguments(query_str: str, username: str) -> str:
     STANDARD = "'christopherharmon25'"
     new_username = f"'{username}'" 
@@ -133,6 +154,10 @@ if __name__ == "__main__":
     elif "q2" in filename_lower:
         print(">>> query 2")
         create_q2_table(query_str)
+    
+    elif "q3" in filename_lower:
+        print(">>> query 3")
+        run_q3(query_str)
 
     elif "q4" in filename_lower:
         print(">>> query 4")
