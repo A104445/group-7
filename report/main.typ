@@ -224,7 +224,7 @@ Após esta alteração, partimos então para a reestruturação. O resultado fin
    CROSS JOIN LATERAL (
        SELECT 
            t.repository_id, t.ticket_id, t.created_by, t.type, t.title, 
-           t.duration as time_to_close,
+           t.duration as time_to_close
        FROM ticket t
        JOIN repository r ON r.id = t.repository_id
        JOIN users u ON u.username = t.created_by
@@ -604,7 +604,18 @@ As medições iniciais evidenciaram constrangimentos de desempenho significativo
 
 === Análise do plano de execução
 
-Para encontrarmos os principais entraves a um melhor funcionamento das pesquisas, gerou-se e analisou-se o plano de execução através do _EXPLAIN ANALYZE_. O plano mostra que o desempenho é dominado por múltiplas operações de _Parallel Seq Scan_ sobre todas as tabelas envolvidas no ```sql UNION ALL```, especialmente as tabelas maiores (`star`, `commit` e `users`). Cada uma delas percorre milhões de linhas apenas para aplicar filtros de datas antes de alimentar o _Parallel Append_.
+Para encontrarmos os principais entraves a um melhor funcionamento das pesquisas, gerou-se e analisou-se o plano de execução através do _EXPLAIN ANALYZE_.
+
+
+#figure(
+  image("images/primeira.png"),
+  caption: [Plano de Execução Q3 (versão original).]
+) <Q3-explainAnalyze>
+#v(7pt)
+- *Gargalo Principal - Estratégia de processamento (Agregação):*
+
+
+O plano mostra que o desempenho é dominado por múltiplas operações de _Parallel Seq Scan_ sobre todas as tabelas envolvidas no ```sql UNION ALL```, especialmente as tabelas maiores (`star`, `commit` e `users`). Cada uma delas percorre milhões de linhas apenas para aplicar filtros de datas antes de alimentar o _Parallel Append_.
 
 Pontos principais observados:
 
@@ -659,7 +670,7 @@ actual rows=3224998 Rows Removed by Filter: 1775002
 === Indexação de colunas
 
 Foram criados índices sobre as colunas temporais (`created_at`, `opened_at`, `closed_at`, `starred_at`) de todas as tabelas envolvidas na query uma vez que o plano de execução mostrava vários _Parallel Seq Scan_ a milhões de linhas apenas para aplicar filtros de data.
-
+#pagebreak()
 Os índices criados evitam leituras completas das tabelas, diminuindo assim o custo das operações.
 
 #figure(
@@ -727,6 +738,11 @@ FROM (
 )  <Q3-otimizada> 
 #v(7pt)
 === Resultados finais
+#figure(
+  image("images/segundo.png"),
+  caption: [Plano de Execução Q3 (versão otimizada).]
+) <Q3-explainAnalyze2>
+#v(7pt)
 
 Na tabela abaixo estão definidos os tempos médios de execução (média obtida através de 10 execuções) da pesquisa, com as atualizações e alterações realizadas.
 É importante referir também que, todos estes tempos, foram obtidos após ter sido realizada uma alteração tanto a nível de memória como na paralelização, através dos seguintes comandos:
